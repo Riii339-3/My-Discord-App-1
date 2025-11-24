@@ -13,8 +13,16 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates
     ],
 });
+const { 
+  joinVoiceChannel, 
+  createAudioPlayer, 
+  createAudioResource, 
+  AudioPlayerStatus 
+} = require("@discordjs/voice");
+const ytdl = require("ytdl-core");
 
 // スラッシュコマンドの定義
 const commands = [
@@ -26,6 +34,10 @@ const commands = [
         .setName('hello')
         .setDescription('挨拶します')
         .toJSON(),
+    new SlashCommandBuilder()
+        .setName("join")
+        .setDescription("VCに参加します")
+        .toJSON
 ];
 
 // スラッシュコマンドをサーバーに登録
@@ -44,6 +56,8 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     }
 })();
 
+
+
 // Botが起動完了したときの処理
 client.once('clientReady', () => {
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
@@ -61,6 +75,24 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.reply('🏓 pong!');
     } else if (commandName === 'hello') {
         await interaction.reply(`こんにちは、${interaction.user.username}さん！`);
+    } else if (commandName === "join") {
+        if (!interaction.member.voice.channel) {
+            await interaction.reply("❌ ボイスチャンネルに参加していません")
+        }
+        else {
+            try {
+                const connection = joinVoiceChannel({
+                channelId: interaction.member.voice.channelId,
+                guildId: interaction.member.guildId,
+                adapterCreator: interaction.member.voice.voiceAdapterCreator
+                });
+                await interaction.reply(`✅ **${interaction.voice.channel.name}** に参加しました！`);
+            } catch (error) {
+                await interaction.reply("✖ ボイスチャンネルに接続できませんでした")
+                console.log(error)
+            }
+        }
+
     }
 });
 
