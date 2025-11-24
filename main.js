@@ -3,6 +3,13 @@
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
+import { 
+  joinVoiceChannel, 
+  createAudioPlayer, 
+  createAudioResource, 
+  AudioPlayerStatus, 
+  NoSubscriberBehavior 
+} from "@discordjs/voice";
 
 dotenv.config();
 
@@ -16,12 +23,6 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates
     ],
 });
-const { 
-  joinVoiceChannel, 
-  createAudioPlayer, 
-  createAudioResource, 
-  AudioPlayerStatus 
-} = require("@discordjs/voice");
 const ytdl = require("ytdl-core");
 
 // スラッシュコマンドの定義
