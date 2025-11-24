@@ -1,22 +1,48 @@
-// main.mjs - Discord Botのメインプログラム
+// main.mjs - Discord Botのメインプログラム（スラッシュコマンド対応）
 
-// 必要なライブラリを読み込み
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 
-// .envファイルから環境変数を読み込み
 dotenv.config();
 
 // Discord Botクライアントを作成
 const client = new Client({
     intents: [
-        GatewayIntentBits.Guilds,           // サーバー情報取得
-        GatewayIntentBits.GuildMessages,    // メッセージ取得
-        GatewayIntentBits.MessageContent,   // メッセージ内容取得
-        GatewayIntentBits.GuildMembers,     // メンバー情報取得
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
     ],
 });
+
+// スラッシュコマンドの定義
+const commands = [
+    new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('Botの応答速度を確認します')
+        .toJSON(),
+    new SlashCommandBuilder()
+        .setName('hello')
+        .setDescription('挨拶します')
+        .toJSON(),
+];
+
+// スラッシュコマンドをサーバーに登録
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+(async () => {
+    try {
+        console.log('🔄 スラッシュコマンドを登録中...');
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+            { body: commands }
+        );
+        console.log('✅ コマンド登録完了');
+    } catch (error) {
+        console.error(error);
+    }
+})();
 
 // Botが起動完了したときの処理
 client.once('clientReady', () => {
@@ -24,15 +50,26 @@ client.once('clientReady', () => {
     console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
 });
 
-// メッセージが送信されたときの処理
+// メッセージ受信イベント（旧方式 / テキストチャット用）
 client.on('messageCreate', (message) => {
-    // Bot自身のメッセージは無視
     if (message.author.bot) return;
-    
-    // 「ping」メッセージに反応
+
     if (message.content.toLowerCase() === 'ping') {
         message.reply('🏓 pong!');
         console.log(`📝 ${message.author.tag} が ping コマンドを使用`);
+    }
+});
+
+// スラッシュコマンド受信イベント
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    const { commandName } = interaction;
+
+    if (commandName === 'ping') {
+        await interaction.reply('🏓 pong!');
+    } else if (commandName === 'hello') {
+        await interaction.reply(`こんにちは、${interaction.user.username}さん！`);
     }
 });
 
@@ -55,26 +92,23 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 console.log('🔄 Discord に接続中...');
-client.login(process.env.DISCORD_TOKEN)
-    .catch(error => {
-        console.error('❌ ログインに失敗しました:', error);
-        process.exit(1);
-    });
+client.login(process.env.DISCORD_TOKEN).catch((error) => {
+    console.error('❌ ログインに失敗しました:', error);
+    process.exit(1);
+});
 
 // Express Webサーバーの設定（Render用）
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ヘルスチェック用エンドポイント
 app.get('/', (req, res) => {
     res.json({
         status: 'Bot is running! 🤖',
         uptime: process.uptime(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 });
 
-// サーバー起動
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
 });
