@@ -50,15 +50,6 @@ client.once('clientReady', () => {
     console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
 });
 
-// メッセージ受信イベント（旧方式 / テキストチャット用）
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
-
-    if (message.content.toLowerCase() === 'ping') {
-        message.reply('🏓 pong!');
-        console.log(`📝 ${message.author.tag} が ping コマンドを使用`);
-    }
-});
 
 // スラッシュコマンド受信イベント
 client.on('interactionCreate', async (interaction) => {
